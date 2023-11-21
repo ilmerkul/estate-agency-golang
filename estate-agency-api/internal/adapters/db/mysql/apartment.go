@@ -8,32 +8,49 @@ import (
 	"gilab.com/estate-agency-api/internal/domain/entity"
 )
 
+const (
+	contextTimeGetAllApartment = 2
+	contextTimeGetOneApartment = 1
+	contextTimeCreateApartment = 1
+	contextTimeUpdateApartment = 1
+	contextTimeDeleteApartment = 1
+)
+
 type apartmentStorage struct {
-	db *sql.DB
+	db      *sql.DB
+	context context.Context
 }
 
 func NewApartmentStorage(db *sql.DB) *apartmentStorage {
-	return &apartmentStorage{db: db}
+	return &apartmentStorage{db: db, context: context.Background()}
 }
 
 func (as *apartmentStorage) GetAll(page int, pageSize int) (apartments []*entity.Apartment, err error) {
-	context, close := context.WithTimeout(context.Background(), 3*time.Second)
+
+	q := `SELECT * FROM apartments LIMIT ?,?`
+
+	context, close := context.WithTimeout(as.context, contextTimeGetAllApartment*time.Second)
 	defer close()
 
-	if err := as.db.PingContext(context); err != nil {
-		return nil, err
+	if err = as.db.PingContext(context); err != nil {
+		return
 	}
 
-	rows, err := as.db.QueryContext(context, "SELECT * FROM apartments LIMIT ?,?", page*pageSize, pageSize)
+	stmt, err := as.db.PrepareContext(context, q)
 	if err != nil {
-		return nil, err
+		return
+	}
+
+	rows, err := stmt.QueryContext(context, page*pageSize, pageSize)
+	if err != nil {
+		return
 	}
 
 	for rows.Next() {
 		apartment := &entity.Apartment{}
 		err = rows.Scan(&apartment.ID, &apartment.Title, &apartment.Price, &apartment.City, &apartment.Rooms, &apartment.Address, &apartment.Square, &apartment.IDRealtor, &apartment.UpdateTime, &apartment.CreateTime)
 		if err != nil {
-			return nil, err
+			return
 		}
 		apartments = append(apartments, apartment)
 	}
@@ -44,33 +61,48 @@ func (as *apartmentStorage) GetAll(page int, pageSize int) (apartments []*entity
 }
 
 func (as *apartmentStorage) GetByID(id int) (apartment *entity.Apartment, err error) {
-	context, close := context.WithTimeout(context.Background(), 1*time.Second)
+
+	q := `SELECT * FROM apartments WHERE id=?`
+
+	context, close := context.WithTimeout(as.context, contextTimeGetOneApartment*time.Second)
 	defer close()
 
-	if err := as.db.PingContext(context); err != nil {
-		return apartment, err
+	if err = as.db.PingContext(context); err != nil {
+		return
+	}
+
+	stmt, err := as.db.PrepareContext(context, q)
+	if err != nil {
+		return
 	}
 
 	apartment = &entity.Apartment{}
-	err = as.db.QueryRowContext(context, "SELECT * FROM apartments WHERE id=?", id).Scan(&apartment.ID, &apartment.Title, &apartment.Price, &apartment.City, &apartment.Rooms, &apartment.Address, &apartment.Square, &apartment.IDRealtor, &apartment.UpdateTime, &apartment.CreateTime)
-	if err != nil {
-		return apartment, err
+	if err = stmt.QueryRowContext(context, id).Scan(&apartment.ID, &apartment.Title, &apartment.Price, &apartment.City, &apartment.Rooms, &apartment.Address, &apartment.Square, &apartment.IDRealtor, &apartment.UpdateTime, &apartment.CreateTime); err != nil {
+		return
 	}
 
 	return apartment, nil
 }
 
 func (as *apartmentStorage) Create(apartment *entity.Apartment) (id int64, err error) {
-	context, close := context.WithTimeout(context.Background(), 1*time.Second)
+
+	q := `INSERT INTO apartments (title, price, city, rooms, address, square, id_realtor, update_time, create_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	context, close := context.WithTimeout(as.context, contextTimeCreateApartment*time.Second)
 	defer close()
 
-	if err := as.db.PingContext(context); err != nil {
-		return id, err
+	if err = as.db.PingContext(context); err != nil {
+		return
 	}
 
-	row, err := as.db.ExecContext(context, "INSERT INTO apartments (title, price, city, rooms, address, square, id_realtor, update_time, create_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", apartment.Title, apartment.Price, apartment.City, apartment.Rooms, apartment.Address, apartment.Square, apartment.IDRealtor, apartment.UpdateTime, apartment.CreateTime)
+	stmt, err := as.db.PrepareContext(context, q)
 	if err != nil {
-		return id, err
+		return
+	}
+
+	row, err := stmt.ExecContext(context, apartment.Title, apartment.Price, apartment.City, apartment.Rooms, apartment.Address, apartment.Square, apartment.IDRealtor, apartment.UpdateTime, apartment.CreateTime)
+	if err != nil {
+		return
 	}
 
 	id, err = row.LastInsertId()
@@ -79,16 +111,24 @@ func (as *apartmentStorage) Create(apartment *entity.Apartment) (id int64, err e
 }
 
 func (as *apartmentStorage) Update(apartment *entity.Apartment) (aff int64, err error) {
-	context, close := context.WithTimeout(context.Background(), 1*time.Second)
+
+	q := `UPDATE apartments SET title=?, price=?, city=?, rooms=?, address=?, square=?, id_realtor=?, update_time=?, create_time=? WHERE id=?`
+
+	context, close := context.WithTimeout(as.context, contextTimeUpdateApartment*time.Second)
 	defer close()
 
 	if err = as.db.PingContext(context); err != nil {
 		return aff, err
 	}
 
-	result, err := as.db.ExecContext(context, "UPDATE apartments SET title=?, price=?, city=?, rooms=?, address=?, square=?, id_realtor=?, update_time=?, create_time=? WHERE id=?", apartment.Title, apartment.Price, apartment.City, apartment.Rooms, apartment.Address, apartment.Square, apartment.IDRealtor, apartment.UpdateTime, apartment.CreateTime, apartment.ID)
+	stmt, err := as.db.PrepareContext(context, q)
 	if err != nil {
-		return aff, err
+		return
+	}
+
+	result, err := stmt.ExecContext(context, apartment.Title, apartment.Price, apartment.City, apartment.Rooms, apartment.Address, apartment.Square, apartment.IDRealtor, apartment.UpdateTime, apartment.CreateTime, apartment.ID)
+	if err != nil {
+		return
 	}
 
 	aff, err = result.RowsAffected()
@@ -97,17 +137,22 @@ func (as *apartmentStorage) Update(apartment *entity.Apartment) (aff int64, err 
 }
 
 func (as *apartmentStorage) Delete(id int) error {
-	context, close := context.WithTimeout(context.Background(), 1*time.Second)
+
+	q := `DELETE FROM apartments WHERE id=?`
+
+	context, close := context.WithTimeout(as.context, contextTimeDeleteApartment*time.Second)
 	defer close()
 
 	if err := as.db.PingContext(context); err != nil {
 		return err
 	}
 
-	_, err := as.db.ExecContext(context, "DELETE FROM apartments WHERE id=?", id)
+	stmt, err := as.db.PrepareContext(context, q)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	_, err = stmt.ExecContext(context, "", id)
+
+	return err
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"gilab.com/estate-agency-api/internal/domain/entity"
-	"gilab.com/estate-agency-api/internal/middlewares"
 	"gilab.com/estate-agency-api/internal/transport/http/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -39,7 +38,6 @@ func NewApartmentHandler(apartmentUsecase ApartmentUsecase) *apartmentHandler {
 func (h *apartmentHandler) Register(router *gin.Engine) {
 	router.GET(apartmentsURL, h.GetApartments)
 	router.GET(apartmentURL, h.GetApartment)
-	router.Use(middlewares.BasicAuth())
 	router.POST(apartmentsURL, h.CreateApartment)
 	router.PATCH(apartmentURL, h.UpdateApartment)
 	router.DELETE(apartmentURL, h.DeleteApartment)

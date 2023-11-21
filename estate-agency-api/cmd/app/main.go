@@ -7,6 +7,7 @@ import (
 	"gilab.com/estate-agency-api/internal/config"
 	"gilab.com/estate-agency-api/internal/domain/service"
 	"gilab.com/estate-agency-api/internal/domain/usecase"
+	"gilab.com/estate-agency-api/internal/middlewares"
 	v1 "gilab.com/estate-agency-api/internal/transport/http/v1"
 	client "gilab.com/estate-agency-api/pkg/client/mysql"
 	"gilab.com/estate-agency-api/pkg/logging"
@@ -29,6 +30,7 @@ func main() {
 
 	router.Use(gin.Recovery(), gin.Logger())
 	/* routes.UserRoutes(router) */
+	router.Use(middlewares.BasicAuth(cfg.HTTPServerConfig.User, cfg.HTTPServerConfig.Password))
 
 	logger.Info("Set routes")
 	realtorHandler := v1.NewRealtorHandler(usecase.NewRealtorUsecase(service.NewRealtorService(mysql.NewRealtorStorage(db))))
