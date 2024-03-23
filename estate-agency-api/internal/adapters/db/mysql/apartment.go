@@ -1,4 +1,4 @@
-package mysql
+package mysqlAdapter
 
 import (
 	"context"
@@ -17,19 +17,18 @@ const (
 )
 
 type apartmentStorage struct {
-	db      *sql.DB
-	context context.Context
+	db *sql.DB
 }
 
 func NewApartmentStorage(db *sql.DB) *apartmentStorage {
-	return &apartmentStorage{db: db, context: context.Background()}
+	return &apartmentStorage{db: db}
 }
 
 func (as *apartmentStorage) GetAll(page int, pageSize int) (apartments []*entity.Apartment, err error) {
 
 	q := `SELECT * FROM apartments LIMIT ?,?`
 
-	context, close := context.WithTimeout(as.context, contextTimeGetAllApartment*time.Second)
+	context, close := context.WithTimeout(context.Background(), contextTimeGetAllApartment*time.Second)
 	defer close()
 
 	if err = as.db.PingContext(context); err != nil {
@@ -64,7 +63,7 @@ func (as *apartmentStorage) GetByID(id int) (apartment *entity.Apartment, err er
 
 	q := `SELECT * FROM apartments WHERE id=?`
 
-	context, close := context.WithTimeout(as.context, contextTimeGetOneApartment*time.Second)
+	context, close := context.WithTimeout(context.Background(), contextTimeGetOneApartment*time.Second)
 	defer close()
 
 	if err = as.db.PingContext(context); err != nil {
@@ -88,7 +87,7 @@ func (as *apartmentStorage) Create(apartment *entity.Apartment) (id int64, err e
 
 	q := `INSERT INTO apartments (title, price, city, rooms, address, square, id_realtor, update_time, create_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	context, close := context.WithTimeout(as.context, contextTimeCreateApartment*time.Second)
+	context, close := context.WithTimeout(context.Background(), contextTimeCreateApartment*time.Second)
 	defer close()
 
 	if err = as.db.PingContext(context); err != nil {
@@ -114,7 +113,7 @@ func (as *apartmentStorage) Update(apartment *entity.Apartment) (aff int64, err 
 
 	q := `UPDATE apartments SET title=?, price=?, city=?, rooms=?, address=?, square=?, id_realtor=?, update_time=?, create_time=? WHERE id=?`
 
-	context, close := context.WithTimeout(as.context, contextTimeUpdateApartment*time.Second)
+	context, close := context.WithTimeout(context.Background(), contextTimeUpdateApartment*time.Second)
 	defer close()
 
 	if err = as.db.PingContext(context); err != nil {
@@ -140,7 +139,7 @@ func (as *apartmentStorage) Delete(id int) error {
 
 	q := `DELETE FROM apartments WHERE id=?`
 
-	context, close := context.WithTimeout(as.context, contextTimeDeleteApartment*time.Second)
+	context, close := context.WithTimeout(context.Background(), contextTimeDeleteApartment*time.Second)
 	defer close()
 
 	if err := as.db.PingContext(context); err != nil {

@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"gilab.com/estate-agency-api/internal/domain/entity"
-	"gilab.com/estate-agency-api/internal/transport/http/dto"
+	"gilab.com/estate-agency-api/internal/lib/logger"
+	"gilab.com/estate-agency-api/internal/transport/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -29,10 +30,11 @@ type ApartmentUsecase interface {
 type apartmentHandler struct {
 	apartmentUsecase ApartmentUsecase
 	validate         *validator.Validate
+	logger           *logger.Logger
 }
 
-func NewApartmentHandler(apartmentUsecase ApartmentUsecase) *apartmentHandler {
-	return &apartmentHandler{apartmentUsecase: apartmentUsecase, validate: validator.New()}
+func NewApartmentHandler(apartmentUsecase ApartmentUsecase, logger *logger.Logger) *apartmentHandler {
+	return &apartmentHandler{apartmentUsecase: apartmentUsecase, validate: validator.New(), logger: logger}
 }
 
 func (h *apartmentHandler) Register(router *gin.Engine) {
@@ -44,19 +46,27 @@ func (h *apartmentHandler) Register(router *gin.Engine) {
 }
 
 func (h *apartmentHandler) GetApartments(ctx *gin.Context) {
+	const op = "handler.GetApartments"
+
+	h.logger.WithField("op", op)
+
 	const page_size = 10
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "0"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		h.logger.Info("page id wrong")
+		ctx.JSON(http.StatusBadRequest, gin.H{"err": "error id"})
 		return
 	}
 
 	apartments, err := h.apartmentUsecase.GetAllApartment(context.Background(), page, page_size)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+		h.logger.Info("page not found:")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"err": "not found"})
 		return
 	}
+
+	h.logger.Info("page found; id: ", page)
 
 	ctx.JSON(http.StatusOK, apartments)
 }
