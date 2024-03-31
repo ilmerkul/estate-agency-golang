@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Env                 string `yaml:"env" env:"ENV" env-default:"local"`
+	Env                 string `yaml:"env" env:"ENV" env-default:"debug"`
 	mysql.StorageConfig `yaml:"storage"`
 	HTTPServerConfig    `yaml:"http_server"`
 }

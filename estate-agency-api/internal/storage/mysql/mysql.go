@@ -25,6 +25,8 @@ type ConfigDSN struct {
 	NameDB   string `yaml:"name_db" env:"STORAGE_DSN_NAME_DB"`
 }
 
+const driverName = "mysql"
+
 func New(storageCfg *StorageConfig) (*sql.DB, error) {
 	const op = "storage.mysql.New"
 
@@ -34,9 +36,9 @@ func New(storageCfg *StorageConfig) (*sql.DB, error) {
 	)
 	if storageCfg.StoragePath == "" {
 		path := fmt.Sprintf("%s:%s@%s(%s:%s)/%s", storageCfg.ConfigDSN.User, storageCfg.ConfigDSN.Password, storageCfg.ConfigDSN.Protocol, storageCfg.ConfigDSN.Host, storageCfg.ConfigDSN.Port, storageCfg.ConfigDSN.NameDB)
-		DB, err = sql.Open("mysql", path)
+		DB, err = sql.Open(driverName, path)
 	} else {
-		DB, err = sql.Open("mysql", storageCfg.StoragePath)
+		DB, err = sql.Open(driverName, storageCfg.StoragePath)
 	}
 
 	if err != nil {

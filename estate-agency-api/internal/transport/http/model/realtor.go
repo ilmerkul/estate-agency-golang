@@ -1,4 +1,4 @@
-package dto
+package httpModel
 
 type RealtorView struct {
 	FirstName string `form:"first_name" json:"first_name"`

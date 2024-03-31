@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"gilab.com/estate-agency-api/internal/domain/entity"
+	"gilab.com/estate-agency-api/internal/entity"
 )
 
 type RealtorStorage interface {
