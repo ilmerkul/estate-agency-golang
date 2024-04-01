@@ -65,12 +65,11 @@ func MustLoadPath(configPath string) *Config {
 func fetchConfigPath() string {
 	var res string
 
-	flag.StringVar(&res, "config", "././config/config.yml", "path to config file")
-
-	res = os.Getenv("CONFIG_PATH")
+	flag.StringVar(&res, "config", "../../config/config.yml", "path to config file")
+	flag.Parse()
 
 	if res == "" {
-		flag.Parse()
+		res = os.Getenv("CONFIG_PATH")
 	}
 
 	return res
