@@ -16,15 +16,15 @@ const (
 	contextTimeDeleteApartment = 1
 )
 
-type apartmentStorage struct {
+type apartmentAdapter struct {
 	db *sql.DB
 }
 
-func NewApartmentStorage(db *sql.DB) *apartmentStorage {
-	return &apartmentStorage{db: db}
+func NewApartmentAdapter(db *sql.DB) *apartmentAdapter {
+	return &apartmentAdapter{db: db}
 }
 
-func (as *apartmentStorage) GetAll(page int, pageSize int) (apartments []*entity.Apartment, err error) {
+func (as *apartmentAdapter) GetAll(page int, pageSize int) (apartments []*entity.Apartment, err error) {
 
 	q := `SELECT * FROM apartments LIMIT ?,?`
 
@@ -59,7 +59,7 @@ func (as *apartmentStorage) GetAll(page int, pageSize int) (apartments []*entity
 	return apartments, nil
 }
 
-func (as *apartmentStorage) GetByID(id int) (apartment *entity.Apartment, err error) {
+func (as *apartmentAdapter) GetByID(id int) (apartment *entity.Apartment, err error) {
 
 	q := `SELECT * FROM apartments WHERE id=?`
 
@@ -83,7 +83,7 @@ func (as *apartmentStorage) GetByID(id int) (apartment *entity.Apartment, err er
 	return apartment, nil
 }
 
-func (as *apartmentStorage) Create(apartment *entity.Apartment) (id int64, err error) {
+func (as *apartmentAdapter) Create(apartment *entity.Apartment) (id int64, err error) {
 
 	q := `INSERT INTO apartments (title, price, city, rooms, address, square, id_realtor, update_time, create_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
@@ -109,7 +109,7 @@ func (as *apartmentStorage) Create(apartment *entity.Apartment) (id int64, err e
 	return id, err
 }
 
-func (as *apartmentStorage) Update(apartment *entity.Apartment) (aff int64, err error) {
+func (as *apartmentAdapter) Update(apartment *entity.Apartment) (aff int64, err error) {
 
 	q := `UPDATE apartments SET title=?, price=?, city=?, rooms=?, address=?, square=?, id_realtor=?, update_time=?, create_time=? WHERE id=?`
 
@@ -135,7 +135,7 @@ func (as *apartmentStorage) Update(apartment *entity.Apartment) (aff int64, err 
 	return aff, err
 }
 
-func (as *apartmentStorage) Delete(id int) error {
+func (as *apartmentAdapter) Delete(id int) error {
 
 	q := `DELETE FROM apartments WHERE id=?`
 

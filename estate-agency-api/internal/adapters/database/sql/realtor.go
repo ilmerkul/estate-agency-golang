@@ -16,16 +16,16 @@ const (
 	contextTimeDeleteRealtor = 1
 )
 
-type realtorStorage struct {
+type realtorAdapter struct {
 	db      *sql.DB
 	context context.Context
 }
 
-func NewRealtorStorage(db *sql.DB) *realtorStorage {
-	return &realtorStorage{db: db, context: context.Background()}
+func NewRealtorAdapter(db *sql.DB) *realtorAdapter {
+	return &realtorAdapter{db: db, context: context.Background()}
 }
 
-func (rs *realtorStorage) GetAll(page int, pageSize int) (realtors []*entity.Realtor, err error) {
+func (rs *realtorAdapter) GetAll(page int, pageSize int) (realtors []*entity.Realtor, err error) {
 
 	q := `SELECT * FROM realtors LIMIT ?,?`
 
@@ -60,7 +60,7 @@ func (rs *realtorStorage) GetAll(page int, pageSize int) (realtors []*entity.Rea
 	return realtors, nil
 }
 
-func (rs *realtorStorage) GetByID(id int) (realtor *entity.Realtor, err error) {
+func (rs *realtorAdapter) GetByID(id int) (realtor *entity.Realtor, err error) {
 
 	q := `SELECT * FROM realtors WHERE id=?`
 
@@ -84,7 +84,7 @@ func (rs *realtorStorage) GetByID(id int) (realtor *entity.Realtor, err error) {
 	return realtor, nil
 }
 
-func (rs *realtorStorage) Create(realtor *entity.Realtor) (id int64, err error) {
+func (rs *realtorAdapter) Create(realtor *entity.Realtor) (id int64, err error) {
 
 	q := `INSERT INTO realtors (first_name, last_name, phone, email, rating, experience) VALUES (?, ?, ?, ?, ?, ?)`
 
@@ -110,7 +110,7 @@ func (rs *realtorStorage) Create(realtor *entity.Realtor) (id int64, err error) 
 	return id, err
 }
 
-func (rs *realtorStorage) Update(realtor *entity.Realtor) (aff int64, err error) {
+func (rs *realtorAdapter) Update(realtor *entity.Realtor) (aff int64, err error) {
 
 	q := `UPDATE realtors SET first_name=?, last_name=?, phone=?, email=?, rating=?, experience=? WHERE id=?`
 
@@ -136,7 +136,7 @@ func (rs *realtorStorage) Update(realtor *entity.Realtor) (aff int64, err error)
 	return aff, err
 }
 
-func (rs *realtorStorage) Delete(id int) error {
+func (rs *realtorAdapter) Delete(id int) error {
 
 	q := `DELETE FROM realtors WHERE id=?`
 

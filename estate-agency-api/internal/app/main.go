@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 
-	adapterSql "gilab.com/estate-agency-api/internal/adapters/db/sql"
+	adapterSql "gilab.com/estate-agency-api/internal/adapters/database/sql"
 	"gilab.com/estate-agency-api/internal/config"
 	"gilab.com/estate-agency-api/internal/domain/service"
 	"gilab.com/estate-agency-api/internal/domain/usecase"
-	"gilab.com/estate-agency-api/internal/storage/mysql"
+	"gilab.com/estate-agency-api/internal/storage/database/mysql"
 	"gilab.com/estate-agency-api/internal/transport/http/handler"
 	"gilab.com/estate-agency-api/internal/transport/http/middleware/auth"
 	"github.com/gin-gonic/gin"
@@ -40,7 +40,7 @@ func New(cfg *config.Config, logger *slog.Logger) *app {
 	router.Use(auth.BasicAuth(cfg.HTTPServerConfig.User, cfg.HTTPServerConfig.Password))
 
 	logger.Info("Set routes")
-	usecase := usecase.NewUsecase(service.NewApartmentService(adapterSql.NewApartmentStorage(db)), service.NewRealtorService(adapterSql.NewRealtorStorage(db)))
+	usecase := usecase.NewUsecase(service.NewApartmentService(adapterSql.NewApartmentAdapter(db)), service.NewRealtorService(adapterSql.NewRealtorAdapter(db)))
 
 	realtorHandler := handler.NewRealtorHandler(usecase, logger)
 	realtorHandler.Register(router)

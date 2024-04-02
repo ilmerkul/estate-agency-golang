@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"gilab.com/estate-agency-api/internal/storage/mysql"
+	"gilab.com/estate-agency-api/internal/storage/database/mysql"
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
