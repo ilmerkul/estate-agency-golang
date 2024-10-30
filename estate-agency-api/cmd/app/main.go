@@ -1,62 +1,54 @@
 package main
 
 import (
-	"log/slog"
-	"os"
-	"os/signal"
-	"syscall"
+	"net/http"
 
-	"gilab.com/estate-agency-api/internal/app"
+	"gilab.com/estate-agency-api/internal/adapters/db/mysql"
 	"gilab.com/estate-agency-api/internal/config"
+	"gilab.com/estate-agency-api/internal/domain/service"
+	"gilab.com/estate-agency-api/internal/domain/usecase"
+	"gilab.com/estate-agency-api/internal/middlewares"
+	v1 "gilab.com/estate-agency-api/internal/transport/http/v1"
+	client "gilab.com/estate-agency-api/pkg/client/mysql"
+	"gilab.com/estate-agency-api/pkg/logging"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	cfg := config.MustLoad()
+	cfg := config.GetConfig()
 
-	logger := get_logger(cfg.Env)
+	logger := logging.GetLogger("info")
 
-	app := app.New(cfg, logger)
+	logger.Info("Connect to db")
+	db, err := client.NewClient(&cfg.StorageConfig)
+	if err != nil {
+		panic(err)
+	}
 
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	logger.Info("Create router")
+	router := gin.New()
+
+	router.Use(gin.Recovery(), gin.Logger())
+	/* routes.UserRoutes(router) */
+	router.Use(middlewares.BasicAuth(cfg.HTTPServerConfig.User, cfg.HTTPServerConfig.Password))
+
+	logger.Info("Set routes")
+	realtorHandler := v1.NewRealtorHandler(usecase.NewRealtorUsecase(service.NewRealtorService(mysql.NewRealtorStorage(db))))
+	realtorHandler.Register(router)
+	apartmentHandler := v1.NewApartmentHandler(usecase.NewApartmentUsecase(service.NewApartmentService(mysql.NewApartmentStorage(db)), service.NewRealtorService(mysql.NewRealtorStorage(db))))
+	apartmentHandler.Register(router)
+
+	serv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServerConfig.Timeout,
+		WriteTimeout: cfg.HTTPServerConfig.Timeout,
+		IdleTimeout:  cfg.HTTPServerConfig.IdleTimeout,
+	}
 
 	logger.Info("Start server on " + cfg.HTTPServerConfig.Address)
-
-	go func() {
-		if err := app.Run(); err != nil {
-			panic(err)
-		}
-	}()
-
-	logger.Info("server started")
-
-	<-done
-	logger.Info("stopping server")
-
-	if err := app.Shutdown(); err != nil {
-		logger.Error("failed to stop server " + err.Error())
-
-		return
+	err = serv.ListenAndServe()
+	if err != nil {
+		panic(err)
 	}
-
-	logger.Info("server stopped")
-}
-
-func get_logger(env string) *slog.Logger {
-
-	var level slog.Level
-
-	switch env {
-	case "debug":
-		level = slog.LevelDebug
-	case "prod":
-		level = slog.LevelInfo
-	}
-
-	opts := &slog.HandlerOptions{Level: level}
-	handler := slog.NewJSONHandler(os.Stdout, opts)
-
-	logger := slog.New(handler)
-
-	return logger
 }

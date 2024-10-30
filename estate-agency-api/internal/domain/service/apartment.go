@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"gilab.com/estate-agency-api/internal/entity"
+	"gilab.com/estate-agency-api/internal/domain/entity"
 )
 
 type ApartmentStorage interface {
